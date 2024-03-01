@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,10 +11,12 @@ import (
 )
 
 type responseInfo struct {
-	Data struct {
-		Currency string `json:"currency"`
-		Rates    map[string]string
-	} `json:"data"`
+	Data Data //`json:"data"`
+}
+
+type Data struct {
+	Currency string
+	Rates    map[string]string
 }
 
 var result responseInfo
@@ -29,34 +32,50 @@ func main() {
 	cryptoOne := os.Args[2]
 	cryptoTwo := os.Args[3]
 
+	statusCode := getCyrptoExchangeRates()
+	if statusCode != http.StatusOK {
+		fmt.Println("Request failed with code: " + strconv.FormatInt(int64(statusCode), 64))
+	}
+
+	crypto70, err := calculateCryptoInfo(amount, cryptoOne, 0.7)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	crypto30, err := calculateCryptoInfo(amount, cryptoTwo, 0.3)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println(crypto70)
+	fmt.Println(crypto30)
+
+}
+
+func getCyrptoExchangeRates() int {
 	response, err := http.Get("https://api.coinbase.com/v2/exchange-rates?currency=USD")
 	if err != nil {
 		fmt.Println("No response from request")
 		os.Exit(1)
 	}
 	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body) // response body is []byte
+	body, err := ioutil.ReadAll(response.Body)
 
-	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to go struct pointer
+	if err := json.Unmarshal(body, &result); err != nil {
 		fmt.Println("Can not unmarshal JSON")
 	}
 
-	displayCryptoInfo(amount, cryptoOne, 0.7)
-	displayCryptoInfo(amount, cryptoTwo, 0.3)
-
+	return response.StatusCode
 }
 
-func displayCryptoInfo(amount float64, cryptoName string, percent float64) {
+func calculateCryptoInfo(amount float64, cryptoName string, percent float64) (string, error) {
 	dollarAmount := amount * percent
 	cryptoValue, err := strconv.ParseFloat(result.Data.Rates[cryptoName], 64)
 	if err != nil {
-		fmt.Println("Crypto name: " + cryptoName + " must be a valued crypto type.")
-		os.Exit(1)
+		return "", errors.New("Crypto name: " + cryptoName + " must be a valued crypto type.")
 	}
-	fmt.Print("$")
-	fmt.Print(dollarAmount)
-	fmt.Print(" => ")
-	fmt.Print((dollarAmount) * cryptoValue)
-	fmt.Println(" " + cryptoName)
+
+	return "$" + strconv.FormatFloat(dollarAmount, 'f', -1, 64) + " => " + strconv.FormatFloat((dollarAmount*cryptoValue), 'f', -1, 64) + " " + cryptoName, nil
 
 }
