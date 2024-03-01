@@ -16,11 +16,14 @@ type responseInfo struct {
 	} `json:"data"`
 }
 
+var result responseInfo
+
 func main() {
 
 	amount, err := strconv.ParseFloat(os.Args[1], 64)
 	if err != nil {
-		fmt.Println("value must be a number (type float)")
+		fmt.Println("value: " + os.Args[1] + " must be a number (type float)")
+		os.Exit(1)
 	}
 
 	cryptoOne := os.Args[2]
@@ -34,33 +37,26 @@ func main() {
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body) // response body is []byte
 
-	var result responseInfo
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to go struct pointer
 		fmt.Println("Can not unmarshal JSON")
 	}
 
-	cryptoOneValue, err := strconv.ParseFloat(result.Data.Rates[cryptoOne], 64)
+	displayCryptoInfo(amount, cryptoOne, 0.7)
+	displayCryptoInfo(amount, cryptoTwo, 0.3)
+
+}
+
+func displayCryptoInfo(amount float64, cryptoName string, percent float64) {
+	dollarAmount := amount * percent
+	cryptoValue, err := strconv.ParseFloat(result.Data.Rates[cryptoName], 64)
 	if err != nil {
-		fmt.Println("Crypto One must be a valued crypto type.")
+		fmt.Println("Crypto name: " + cryptoName + " must be a valued crypto type.")
 		os.Exit(1)
 	}
-
-	cryptoTwoValue, err := strconv.ParseFloat(result.Data.Rates[cryptoTwo], 64)
-	if err != nil {
-		fmt.Println("Crypto Two must be a valued crypto type.")
-		os.Exit(1)
-	}
-
 	fmt.Print("$")
-	fmt.Print(amount * 0.7)
+	fmt.Print(dollarAmount)
 	fmt.Print(" => ")
-	fmt.Print((amount * 0.7) * cryptoOneValue)
-	fmt.Println(" " + cryptoOne)
-
-	fmt.Print("$")
-	fmt.Print(amount * 0.3)
-	fmt.Print(" => ")
-	fmt.Print((amount * 0.3) * cryptoTwoValue)
-	fmt.Print(" " + cryptoTwo)
+	fmt.Print((dollarAmount) * cryptoValue)
+	fmt.Println(" " + cryptoName)
 
 }
