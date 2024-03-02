@@ -10,6 +10,12 @@ $70 => 0.001125888758491 BTC
 $30 => 55.04587155963302 1INCH
 
 # Run tests
+`go test cryptoExchangeRate`
+
+Expected output: 
+ok      cryptoExchangeRate      (cached)
+
+
 
 # Assignment Prompt
 
