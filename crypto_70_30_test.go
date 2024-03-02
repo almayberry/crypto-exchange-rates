@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func Test_getCyrptoExchangeRates(t *testing.T) {
-	statusCode := getCyrptoExchangeRates()
+func Test_getCryptoExchangeRates(t *testing.T) {
+	statusCode := getCryptoExchangeRates()
 
 	if statusCode != http.StatusOK {
 		t.Errorf("got statusCode %q expected %q", statusCode, http.StatusOK)
@@ -56,4 +56,38 @@ func Test_calculateCryptoInfo_ErrorCryptoName(t *testing.T) {
 		t.Errorf("Error was not found when it was expected.")
 	}
 
+}
+
+func Test_roundDollarAmount(t *testing.T) {
+	type addTest struct {
+		arg1, expected float64
+	}
+
+	var addTests = []addTest{
+		{100.5555, 100.56},
+		{100.22252, 100.22},
+	}
+
+	for _, test := range addTests {
+		if output := roundDollarAmount(test.arg1); output != test.expected {
+			t.Errorf("Output %f not equal to expected %f", output, test.expected)
+		}
+	}
+}
+
+func Test_truncateDollarAmount(t *testing.T) {
+	type addTest struct {
+		arg1, expected float64
+	}
+
+	var addTests = []addTest{
+		{100.5555, 100.55},
+		{100.22222, 100.22},
+	}
+
+	for _, test := range addTests {
+		if output := truncateDollarAmount(test.arg1); output != test.expected {
+			t.Errorf("Output %f not equal to expected %f", output, test.expected)
+		}
+	}
 }
