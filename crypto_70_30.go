@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -23,39 +24,39 @@ type Data struct {
 var result responseInfo
 
 func main() {
+	var amount float64
+	var crypto70 string
+	var crypto30 string
 
-	amount, err := strconv.ParseFloat(os.Args[1], 64)
-	if err != nil {
-		fmt.Println("value: " + os.Args[1] + " must be a number (type float)")
-		os.Exit(1)
-	}
+	flag.Float64Var(&amount, "amount", 100, "Provide dollar amount to spend on crypto")
+	flag.StringVar(&crypto70, "crypto70", "BTC", "Provide crypto name to spend 70% of the money on")
+	flag.StringVar(&crypto30, "crypto30", "1INCH", "Provide crypto name to spend 30% of the money on")
+
+	flag.Parse()
 
 	if (math.Mod(amount/.01, 1.0)) != 0 {
 		amount = truncateDollarAmount(amount)
 		fmt.Println("Dollar amount can not go past two decimal places. Your amount has been truncated to: $", amount)
 	}
 
-	cryptoOne := os.Args[2]
-	cryptoTwo := os.Args[3]
-
 	statusCode := getCryptoExchangeRates()
 	if statusCode != http.StatusOK {
 		fmt.Println("Request failed with code: " + strconv.FormatInt(int64(statusCode), 64))
 	}
 
-	crypto70, err := calculateCryptoInfo(amount, cryptoOne, .7)
+	crypto70Display, err := calculateCryptoInfo(amount, crypto70, .7)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	crypto30, err := calculateCryptoInfo(amount, cryptoTwo, .3)
+	crypto30Display, err := calculateCryptoInfo(amount, crypto30, .3)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println(crypto70)
-	fmt.Println(crypto30)
+	fmt.Println(crypto70Display)
+	fmt.Println(crypto30Display)
 
 }
 
@@ -85,7 +86,7 @@ func calculateCryptoInfo(amount float64, cryptoName string, percent float64) (st
 
 	cryptoValue, err := strconv.ParseFloat(result.Data.Rates[cryptoName], 64)
 	if err != nil {
-		return "", errors.New("Crypto name: " + cryptoName + " must be a valued crypto type.")
+		return "", errors.New("Crypto name: " + cryptoName + " is an invalid crypto type.")
 	}
 
 	return "$" + strconv.FormatFloat(dollarAmount, 'f', -1, 64) + " => " + strconv.FormatFloat((dollarAmount*cryptoValue), 'f', -1, 64) + " " + cryptoName, nil
